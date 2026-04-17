@@ -39,14 +39,27 @@ enum Commands {
         /// Path to preview image
         #[arg(short, long)]
         preview: String,
+
+        /// Title of the item
+        #[arg(short, long)]
+        title: String,
+
+        /// Description of the item
+        #[arg(short, long)]
+        description: String,
+
+        /// Visibility
+        /// 0 = Public, 1 = Friends Only, 2 = Private/Hidden, 3 = Unlisted
+        #[arg(short, long)]
+        visibility: u32,
     },
     
-    // /// Delete a workshop item
-    // Delete {
-    //     /// Published file ID to delete
-    //     #[arg(short, long)]
-    //     id: u64,
-    // },
+    /// Delete a workshop item
+    Delete {
+        /// Published file ID to delete
+        #[arg(short, long)]
+        workshopid: u64,
+    },
 
     Test,
 }
@@ -64,13 +77,30 @@ fn main() {
     match args.command {
         Commands::Create { appid } => steam::create::create_item(&ugc, appid),
 
-        Commands::Upload { appid, workshopid, content, preview } => {
+        Commands::Upload { 
+            appid, 
+            workshopid, 
+            content, 
+            preview, 
+            title, 
+            description,
+            visibility
+        } => {
             let published_id = steamworks::PublishedFileId(workshopid);
-            steam::uploader::upload_item_content(&ugc, appid, published_id, &content, &preview);
+            steam::uploader::upload_item_content(
+                &ugc, appid, published_id, 
+                &content, &preview, &title, 
+                &description, visibility
+            );
         }
 
         Commands::Test => {
             println!("Test command executed");
+        }
+
+        Commands::Delete { workshopid } => {
+            let published_id = steamworks::PublishedFileId(workshopid);
+            steam::delete::delete_item(&ugc, published_id);
         }
     }
 }
