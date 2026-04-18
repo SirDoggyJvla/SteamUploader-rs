@@ -33,30 +33,14 @@ endif
 help:
 	@echo "Usage: make [target]"
 	@echo "Available targets:"
-	@echo "  build   - Build the project in debug mode"
-	@echo "  release - Build the project in release mode"
-	@echo "  clean   - Clean the project"
-	@echo "  run     - Run the project"
 	@echo "  tests    - Run tests"
 	@echo "  test_upload - Test the upload functionality"
 	@echo "  test_manifests - Test manifest parsing with different formats (json, toml, yaml, yml)"
 
-build:
-	cargo build
-
-release:
-	cargo build --release
-
-clean:
-	cargo clean
-
-run:
-	cargo run
-
 tests: test_manifests test_upload
 
-test_upload: build
-# 	set -e
+test_upload:
+	cargo build
 
 	cp $(APP) test/example_mod
 	cp $(STEAM_LIBS) test/example_mod
@@ -69,26 +53,26 @@ test_upload: build
 	rm $(STEAM_LIBS_RELATIVE)
 	rm $(APP_RELATIVE)
 
-test_manifests: build
-# 	set -e
+test_manifests:
+	cargo build
 
 	cp $(APP) test/example_mod
 	cp $(STEAM_LIBS) test/example_mod
 	cd test/example_mod
-	
-	cp mod-manifest.example.json mod-manifest.json
+
+	cp ../example_manifests/mod-manifest.json mod-manifest.json
 	./$(APP_RELATIVE) upload --dry-run
 	rm mod-manifest.json
 
-	cp mod-manifest.example.toml mod-manifest.toml
+	cp ../example_manifests/mod-manifest.toml mod-manifest.toml
 	./$(APP_RELATIVE) upload --dry-run
 	rm mod-manifest.toml
 
-	cp mod-manifest.example.yaml mod-manifest.yaml
+	cp ../example_manifests/mod-manifest.yaml mod-manifest.yaml
 	./$(APP_RELATIVE) upload --dry-run
 	rm mod-manifest.yaml
 
-	cp mod-manifest.example.yaml mod-manifest.yml
+	cp ../example_manifests/mod-manifest.yaml mod-manifest.yml
 	./$(APP_RELATIVE) upload --dry-run
 	rm mod-manifest.yml
 
