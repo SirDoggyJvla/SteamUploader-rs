@@ -37,7 +37,9 @@ help:
 	@echo "  release - Build the project in release mode"
 	@echo "  clean   - Clean the project"
 	@echo "  run     - Run the project"
-	@echo "  test    - Run tests"
+	@echo "  tests    - Run tests"
+	@echo "  test_upload - Test the upload functionality"
+	@echo "  test_manifests - Test manifest parsing with different formats (json, toml, yaml, yml)"
 
 build:
 	cargo build
@@ -50,6 +52,8 @@ clean:
 
 run:
 	cargo run
+
+tests: test_manifests test_upload
 
 test_upload: build
 # 	set -e
@@ -73,18 +77,20 @@ test_manifests: build
 	cd test/example_mod
 	
 	cp mod-manifest.example.json mod-manifest.json
-	./$(APP_RELATIVE) upload
+	./$(APP_RELATIVE) upload --dry-run
 	rm mod-manifest.json
 
 	cp mod-manifest.example.toml mod-manifest.toml
-	./$(APP_RELATIVE) upload
+	./$(APP_RELATIVE) upload --dry-run
 	rm mod-manifest.toml
 
 	cp mod-manifest.example.yaml mod-manifest.yaml
-	./$(APP_RELATIVE) upload
+	./$(APP_RELATIVE) upload --dry-run
 	rm mod-manifest.yaml
+
+	cp mod-manifest.example.yaml mod-manifest.yml
+	./$(APP_RELATIVE) upload --dry-run
+	rm mod-manifest.yml
 
 	rm $(STEAM_LIBS_RELATIVE)
 	rm $(APP_RELATIVE)
-
-tests: test_upload

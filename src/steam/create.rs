@@ -9,8 +9,17 @@ pub fn create_item(
     client: &steamworks::Client,
     ugc: &steamworks::UGC,
     appid: u32,
+    dry_run: bool,
 ) -> Result<steamworks::PublishedFileId, String> {
     let (tx, rx) = mpsc::channel();
+
+    // dry run
+    // just print a message that we would create a new workshop item, without actually creating anything
+    // and return a dummy PublishedFileId for the rest of the process to work
+    if dry_run {
+        println!("Dry run enabled. Using dummy Workshop ID and skipping actual item creation.");
+        return Ok(steamworks::PublishedFileId(0)); // Return a dummy ID for dry run
+    }
 
     // creating a new workshop item
     // make sure you change the appid to the specified game

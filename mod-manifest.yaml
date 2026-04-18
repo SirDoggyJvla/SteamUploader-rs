@@ -1,0 +1,6 @@
+appid: 108600
+content: ./Contents
+preview: ./Contents/preview.png
+title: SteamUploader test upload YAML
+description: ./description.bbcode
+visibility: 2

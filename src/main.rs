@@ -27,6 +27,10 @@ enum Commands {
         /// Optional path to manifest file
         #[arg(short, long)]
         manifest: Option<String>,
+
+        /// Optional flag to make a dry run (no actual upload, just print what would be uploaded)
+        #[arg(short, long)]
+        dry_run: bool,
     },
     
     /// Delete a workshop item
@@ -46,7 +50,7 @@ enum Commands {
 fn main() {
     let args = Args::parse();
     match args.command {
-        Commands::Upload { patchnote, manifest: manifest_path } => {
+        Commands::Upload { patchnote, manifest: manifest_path, dry_run } => {
             match Manifest::load_default(manifest_path) {
                 Ok(mut manifest) => {
                     let appid = manifest.appid;
@@ -60,13 +64,17 @@ fn main() {
                     } else {
                         // no workshop ID, create one
                         colors::warning("No workshopid found in manifest. Creating new workshop item...");
-                        match steam::create::create_item(&client, &ugc, manifest.appid) {
+                        match steam::create::create_item(&client, &ugc, manifest.appid, dry_run) {
                             Ok(id) => {
                                 colors::success(&format!("Created workshop item: {:?}", id));
                                 // update manifest with new workshopid and save it to the source file
-                                match manifest.save_with_id_to_source(id.0) {
-                                    Ok(_) => colors::info("Updated manifest with new workshopid"),
-                                    Err(e) => colors::error(&format!("Warning: Could not update manifest file: {}", e)),
+                                if dry_run {
+                                    colors::info("Dry run enabled. Skipping manifest update with new workshop ID.");
+                                } else {
+                                    match manifest.save_with_id_to_source(id.0) {
+                                        Ok(_) => colors::info("Updated manifest with new workshopid"),
+                                        Err(e) => colors::error(&format!("Warning: Could not update manifest file: {}", e)),
+                                    }
                                 }
                                 id
                             }
@@ -111,6 +119,7 @@ fn main() {
                         &description,
                         manifest.visibility,
                         patchnote.as_deref(),
+                        dry_run,
                     );
                 }
                 Err(e) => colors::error(&format!("Error loading manifest: {}", e)),
