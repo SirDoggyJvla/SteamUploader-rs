@@ -1,5 +1,4 @@
 use std;
-use steamworks;
 
 fn visibility2enum(visibility: u32) -> Result<steamworks::PublishedFileVisibility, String> {
     match visibility {
@@ -12,7 +11,6 @@ fn visibility2enum(visibility: u32) -> Result<steamworks::PublishedFileVisibilit
         }
     }
 }
-
 
 
 pub fn upload_item_content(

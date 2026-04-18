@@ -29,8 +29,8 @@ test_upload: build
 
 	cp target/debug/SteamUploader test/example_mod
 	cp steamworks-rs/steamworks-sys/lib/steam/redistributable_bin/linux64/libsteam_api.so test/example_mod
-
 	cd test/example_mod
+	
 	cp mod-manifest.example.json mod-manifest.json
 	./SteamUploader upload
 	rm mod-manifest.json

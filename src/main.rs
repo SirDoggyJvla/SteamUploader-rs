@@ -34,23 +34,24 @@ enum Commands {
         /// Published file ID to delete
         #[arg(short, long)]
         workshopid: u64,
+
+        /// App ID
+        #[arg(short, long)]
+        appid: u32,
     },
 }
 
 
 
 fn main() {
-    // create a client pair
-    let client = steamworks::Client::init().expect("Steam is not running or has not been detected");
-
-    // get a handle to Steam's UGC module (user-generated content)
-    let ugc = client.ugc();
-
     let args = Args::parse();
     match args.command {
         Commands::Upload { patchnote, manifest: manifest_path } => {
             match Manifest::load_default(manifest_path) {
                 Ok(mut manifest) => {
+                    let appid = manifest.appid;
+                    let (client, ugc) = steam::load::load_steam(appid);
+
                     // verify that the workshop ID was provided
                     // if not, then we create a new item and update the manifest file
                     let published_id = if let Some(workshopid) = manifest.workshopid {
@@ -119,7 +120,8 @@ fn main() {
 
         // Here we delete the workshop item provided by the user. Steam's API handles basically everything else,
         // we don't need to verify if it exists or if the user is the owner, etc.
-        Commands::Delete { workshopid } => {
+        Commands::Delete { workshopid, appid } => {
+            let (_, ugc) = steam::load::load_steam(appid);
             let published_id = steamworks::PublishedFileId(workshopid);
             steam::delete::delete_item(&ugc, published_id);
         }
