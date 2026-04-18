@@ -97,18 +97,41 @@ impl Manifest {
         self.save_to_source()
     }
 
-    pub fn get_description(&self) -> String {
+
+
+    /// Get the absolute path to the content directory, resolved relative to the manifest file.
+    pub fn get_content_path(&self) -> Result<PathBuf, Box<dyn std::error::Error>> {
+        self.resolve_path(&self.content)
+    }
+
+    /// Get the absolute path to the preview file, resolved relative to the manifest file.
+    pub fn get_preview_path(&self) -> Result<PathBuf, Box<dyn std::error::Error>> {
+        self.resolve_path(&self.preview)
+    }
+
+    /// Resolve a path relative to the manifest file's directory.
+    fn resolve_path(&self, relative_path: &str) -> Result<PathBuf, Box<dyn std::error::Error>> {
+        if let Some(manifest_dir) = &self.source_path.as_ref().and_then(|p| p.parent()) {
+            let resolved = manifest_dir.join(relative_path);
+            Ok(resolved)
+        } else {
+            // if no source path, try the path as-is
+            Ok(PathBuf::from(relative_path))
+        }
+    }
+
+    pub fn get_description(&self) -> Result<String, Box<dyn std::error::Error>> {
         // test if the manifest description is a path to a file
         // if so, load that file content as the description
         // otherwise, return the description as is
-        let description_path = Path::new(&self.description);
+        let description_path = self.resolve_path(&self.description)?;
         if description_path.exists() && description_path.is_file() {
-            match fs::read_to_string(description_path) {
-                Ok(content) => content,
-                Err(_) => self.description.clone(), // if there's an error reading the file, return the original description
+            match fs::read_to_string(&description_path) {
+                Ok(content) => Ok(content),
+                Err(_) => Ok(self.description.clone()), // if there's an error reading the file, return the original description
             }
         } else {
-            self.description.clone()
+            Ok(self.description.clone())
         }
     }
 }

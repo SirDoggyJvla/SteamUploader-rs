@@ -76,15 +76,38 @@ fn main() {
                         }
                     };
 
+                    // resolve content and preview paths relative to the manifest file
+                    let content_path = match manifest.get_content_path() {
+                        Ok(path) => path.to_string_lossy().to_string(),
+                        Err(e) => {
+                            eprintln!("{}", format!("Error resolving content path: {}", e).bright_red());
+                            return;
+                        }
+                    };
+                    let preview_path = match manifest.get_preview_path() {
+                        Ok(path) => path.to_string_lossy().to_string(),
+                        Err(e) => {
+                            eprintln!("{}", format!("Error resolving preview path: {}", e).bright_red());
+                            return;
+                        }
+                    };
+                    let description = match manifest.get_description() {
+                        Ok(desc) => desc,
+                        Err(e) => {
+                            eprintln!("{}", format!("Error reading description: {}", e).bright_red());
+                            return;
+                        }
+                    };
+
                     // upload the content
                     steam::uploader::upload_item_content(
                         &ugc,
                         manifest.appid,
                         published_id,
-                        &manifest.content,
-                        &manifest.preview,
+                        &content_path,
+                        &preview_path,
                         &manifest.title,
-                        &manifest.get_description(),
+                        &description,
                         manifest.visibility,
                         patchnote.as_deref(),
                     );
