@@ -35,13 +35,13 @@ test_upload: build
 	./SteamUploader upload
 	rm manifest.json
 
-# 	cp manifest.example.toml manifest.toml
-# 	./SteamUploader upload
-# 	rm manifest.toml
+	cp manifest.example.toml manifest.toml
+	./SteamUploader upload
+	rm manifest.toml
 
-# 	cp manifest.example.yaml manifest.yaml
-# 	./SteamUploader upload
-# 	rm manifest.yaml
+	cp manifest.example.yaml manifest.yaml
+	./SteamUploader upload
+	rm manifest.yaml
 
 	rm libsteam_api.so
 	rm SteamUploader
