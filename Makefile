@@ -31,17 +31,17 @@ test_upload: build
 	cp steamworks-rs/steamworks-sys/lib/steam/redistributable_bin/linux64/libsteam_api.so test/example_mod
 
 	cd test/example_mod
-	cp manifest.example.json manifest.json
+	cp mod-manifest.example.json mod-manifest.json
 	./SteamUploader upload
-	rm manifest.json
+	rm mod-manifest.json
 
-	cp manifest.example.toml manifest.toml
+	cp mod-manifest.example.toml mod-manifest.toml
 	./SteamUploader upload
-	rm manifest.toml
+	rm mod-manifest.toml
 
-	cp manifest.example.yaml manifest.yaml
+	cp mod-manifest.example.yaml mod-manifest.yaml
 	./SteamUploader upload
-	rm manifest.yaml
+	rm mod-manifest.yaml
 
 	rm libsteam_api.so
 	rm SteamUploader

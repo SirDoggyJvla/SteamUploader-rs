@@ -20,10 +20,10 @@ pub struct Manifest {
 impl Manifest {
     /// List of default manifest filenames to check for when loading without a specified path.
     const MANIFEST_FILENAMES: [&'static str; 4] = [
-        "manifest.json",
-        "manifest.toml",
-        "manifest.yaml",
-        "manifest.yml",
+        "mod-manifest.json",
+        "mod-manifest.toml",
+        "mod-manifest.yaml",
+        "mod-manifest.yml",
     ];
 
     /// Load manifest from file, auto-detecting format (JSON, TOML, or YAML).
