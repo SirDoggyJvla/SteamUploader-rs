@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://steamuploader.example.com/mod-manifest-schema.json",
+  "$id": "https://raw.githubusercontent.com/SirDoggyJvla/SteamUploader-rs/refs/heads/main/manifest_schema/mod-manifest-schema.json",
   "title": "Steam Mod Manifest Schema",
   "description": "Schema for mod manifest files used with SteamUploader. Supports JSON, YAML, and TOML formats.",
   "type": "object",
@@ -10,6 +10,11 @@
     "title"
   ],
   "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "JSON Schema URI that validates this manifest file",
+      "examples": ["https://raw.githubusercontent.com/SirDoggyJvla/SteamUploader-rs/refs/heads/main/manifest_schema/mod-manifest-schema.json"]
+    },
     "appid": {
       "type": "integer",
       "description": "Steam application ID for the game",
