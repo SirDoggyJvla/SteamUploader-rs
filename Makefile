@@ -5,7 +5,18 @@ SHELL := /bin/bash
 
 # detect OS and set Steam library paths
 UNAME_S := $(shell uname -s)
-ifeq ($(UNAME_S),Windows_NT)
+# check for Windows (native Windows_NT, or MINGW/MSYS environments)
+ifeq ($(OS),Windows_NT)
+    IS_WINDOWS := 1
+else ifeq ($(findstring MINGW,$(UNAME_S)),MINGW)
+    IS_WINDOWS := 1
+else ifeq ($(findstring MSYS,$(UNAME_S)),MSYS)
+    IS_WINDOWS := 1
+else
+    IS_WINDOWS := 0
+endif
+
+ifeq ($(IS_WINDOWS),1)
     STEAM_LIBS := steamworks-rs/steamworks-sys/lib/steam/redistributable_bin/win64/steam_api64.dll steamworks-rs/steamworks-sys/lib/steam/redistributable_bin/win64/steam_api64.lib
 	STEAM_LIBS_RELATIVE := steam_api64.dll steam_api64.lib
 
