@@ -1,3 +1,4 @@
+.ONESHELL:
 .PHONY: help build release clean run test fmt lint
 
 help:
@@ -23,10 +24,27 @@ clean:
 run:
 	cargo run
 
-test_upload:
-# 	cargo run -- create --appid 108600
+test_upload: build
+	set -e
 
-	cargo run -- upload --appid 108600 --workshopid 3707650648 --content "/home/simon/Documents/Repositories/Steam-Uploader-tool/SteamUploader-rs/testMod/Contents/hello-world" --preview "/home/simon/Documents/Repositories/Steam-Uploader-tool/SteamUploader-rs/testMod/Contents/preview.png"
+	cp target/debug/SteamUploader test/example_mod
+	cp steamworks-rs/steamworks-sys/lib/steam/redistributable_bin/linux64/libsteam_api.so test/example_mod
+
+	cd test/example_mod
+	cp manifest.example.json manifest.json
+	./SteamUploader upload
+	rm manifest.json
+
+	cp manifest.example.toml manifest.toml
+	./SteamUploader upload
+	rm manifest.toml
+
+	cp manifest.example.yaml manifest.yaml
+	./SteamUploader upload
+	rm manifest.yaml
+
+	rm libsteam_api.so
+	rm SteamUploader
 
 test:
 	cargo test

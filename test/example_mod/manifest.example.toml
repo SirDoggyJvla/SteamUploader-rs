@@ -1,0 +1,7 @@
+appid = 108600
+content = "./Contents"
+preview = "./Contents/preview.png"
+title = "My Awesome Mod"
+description = "This is a detailed description of my mod."
+visibility = 2
+# workshopid = 1234567890  # Uncomment after creating item
