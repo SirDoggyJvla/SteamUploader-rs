@@ -108,6 +108,14 @@ fn main() {
                         }
                     };
 
+                    let patchnote = match manifest.try_read_file(patchnote.unwrap_or_default()) {
+                        Ok(note) => Some(note),
+                        Err(e) => {
+                            colors::error(&format!("Error reading patch note: {}", e));
+                            return;
+                        }
+                    };
+
                     // upload the content
                     steam::uploader::upload_item_content(
                         &ugc,

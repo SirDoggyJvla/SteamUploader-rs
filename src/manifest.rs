@@ -129,14 +129,18 @@ impl Manifest {
         // test if the manifest description is a path to a file
         // if so, load that file content as the description
         // otherwise, return the description as is
-        let description_path = self.resolve_path(&self.description)?;
+        self.try_read_file(self.description.clone())
+    }
+
+    pub fn try_read_file(&self, txt: String) -> Result<String, Box<dyn std::error::Error>> {
+        let description_path = self.resolve_path(&txt)?;
         if description_path.exists() && description_path.is_file() {
             match fs::read_to_string(&description_path) {
                 Ok(content) => Ok(content),
-                Err(_) => Ok(self.description.clone()), // if there's an error reading the file, return the original description
+                Err(_) => Ok(txt.clone()), // if there's an error reading the file, return the original description
             }
         } else {
-            Ok(self.description.clone())
+            Ok(txt.clone())
         }
     }
 }

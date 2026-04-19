@@ -15,7 +15,7 @@ Alternatively, you can manually specify the manifest file:
 SteamUploader upload --manifest path/to/manifest.json
 ```
 
-You can pass a patch note path with the `--patchnote` flag. The patch note file needs to be a text file with any extension. Patch notes in Steam use the BBCode format (see the [BBCode files](#bbcode-files) section).
+You can pass a patch note path with the `--patchnote` flag. The patch note file can either be a text file with any extension or directly the patch note content. Patch notes in Steam use the BBCode format (see the [BBCode files](#bbcode-files) section).
 ```bash
 SteamUploader upload --patchnote path/to/patchnote.txt
 ```
