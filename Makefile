@@ -37,6 +37,16 @@ help:
 	@echo "  test_upload - Test the upload functionality"
 	@echo "  test_manifests - Test manifest parsing with different formats (json, toml, yaml, yml)"
 
+release: tests
+	@echo "Releasing version $(VERSION)"
+
+	git tag -d $(VERSION)
+	git push --delete origin $(VERSION)
+	gh release delete $(VERSION) --yes
+
+	git tag $(VERSION)
+	git push origin $(VERSION)
+
 tests: test_manifests test_upload
 
 test_upload:
@@ -46,7 +56,7 @@ test_upload:
 	cp $(STEAM_LIBS) test/example_mod
 	cd test/example_mod
 
-	cp mod-manifest.example.json mod-manifest.json
+	cp ../example_manifests/mod-manifest.json mod-manifest.json
 	./$(APP_RELATIVE) upload
 	rm mod-manifest.json
 
