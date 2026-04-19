@@ -3,6 +3,8 @@ use std::sync::mpsc;
 use std::time::Duration;
 use std::thread;
 
+use crate::colors;
+
 /// Create a workshop item and return its PublishedFileId
 /// Returns Ok(published_id) on success, or an error message on failure
 pub fn create_item(
@@ -17,7 +19,7 @@ pub fn create_item(
     // just print a message that we would create a new workshop item, without actually creating anything
     // and return a dummy PublishedFileId for the rest of the process to work
     if dry_run {
-        println!("Dry run enabled. Using dummy Workshop ID and skipping actual item creation.");
+        colors::info("Dry run enabled. Using dummy Workshop ID and skipping actual item creation.");
         return Ok(steamworks::PublishedFileId(0)); // Return a dummy ID for dry run
     }
 
