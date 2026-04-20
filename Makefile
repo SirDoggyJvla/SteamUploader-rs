@@ -37,15 +37,19 @@ help:
 	@echo "  test_upload - Test the upload functionality"
 	@echo "  test_manifests - Test manifest parsing with different formats (json, toml, yaml, yml)"
 
-release: tests
+release:
+	@if [ -z "$(VERSION)" ]; then \
+		echo "ERROR: VERSION is not set. Usage: make release VERSION=v1.0.0"; \
+		exit 1; \
+	fi
 	@echo "Releasing version $(VERSION)"
 
-	git tag -d $(VERSION)
-	git push --delete origin $(VERSION)
-	gh release delete $(VERSION) --yes
+	git tag -d v$(VERSION)
+	git push --delete origin v$(VERSION)
+	gh release delete v$(VERSION) --yes
 
-	git tag $(VERSION)
-	git push origin $(VERSION)
+	git tag v$(VERSION)
+	git push origin v$(VERSION)
 
 tests: test_manifests test_upload
 
