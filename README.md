@@ -4,6 +4,22 @@ Steam Uploader Rust is the successor to [Steam Uploader](https://github.com/SirD
 The tool is a command-line application that can be used to upload and delete items on the Steam Workshop. It uses a [manifest file](#manifest-file-format) to store the necessary information for uploading items, such as the app ID, workshop ID, title, description and visibility.
 
 ## Usage
+You can get a list of all available commands with the following command:
+```bash
+SteamUploader --help
+```
+
+### Initialization
+You can initialize a new [manifest file](#manifest-file-format) with the following command:
+```bash
+SteamUploader init
+```
+
+You can chose the format of the manifest file with the `--format` flag. Supported formats are `json`, `yaml`, `yml` and `toml`. The default format is `json`.
+```bash
+SteamUploader init --format yaml
+```
+
 ### Uploading an item
 To run the tool, simply execute the following command in the terminal, in the folder where the [manifest file](#manifest-file-format) is located:
 ```bash
