@@ -6,6 +6,8 @@ use crate::colors;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Manifest {
+    #[serde(rename = "$schema", skip_serializing_if = "Option::is_none")]
+    pub schema: Option<String>,
     pub appid: u32,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub workshopid: Option<u64>,
@@ -33,6 +35,7 @@ impl Manifest {
     /// And save it
     pub fn init(extension: &str) -> Self {
         let manifest = Self {
+            schema: Some("https://raw.githubusercontent.com/SirDoggyJvla/SteamUploader-rs/refs/heads/main/manifest_schema/mod-manifest-schema.json".to_string()),
             appid: 0,
             workshopid: None,
             content: "./Contents".to_string(),
