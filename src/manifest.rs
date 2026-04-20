@@ -42,6 +42,14 @@ impl Manifest {
             source_path: None,
         };
         let filename = format!("mod-manifest.{}", extension);
+
+        // verify the file doesn't already exist to prevent overwriting
+        if Path::new(&filename).exists() {
+            colors::error(&format!("File {} already exists. Aborting to prevent overwriting.", filename));
+            std::process::exit(1);
+        }
+
+        // try to save the manifest
         if let Err(e) = manifest.save(&filename) {
             colors::error(&format!("Failed to save manifest: {}", e));
         } else {
