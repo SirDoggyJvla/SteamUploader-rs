@@ -3,7 +3,7 @@ name = "SteamUploader"
 description = "A simple tool to upload content to the Steam Workshop using Rust and the steamworks-rs library."
 readme = "README.md"
 repository = "https://github.com/SirDoggyJvla/SteamUploader-rs"
-version = "0.1.0"
+version = "0.2.0"
 keywords = ["steam", "workshop", "uploader", "rust"]
 categories = ["games"]
 edition = "2021"
@@ -14,6 +14,9 @@ rust-version = "1.80.0"
 [dependencies]
 # args parsing
 clap = { version = "4", features = ["derive"] }
+
+# interactive CLI menu
+inquire = "0.7"
 
 # Steamworks SDK bindings
 steamworks = "0.13.0"

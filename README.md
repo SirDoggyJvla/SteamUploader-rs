@@ -9,14 +9,30 @@ You can download the latest release from the [releases page](https://github.com/
 Once downloaded, store the tool in a permanent place on your computer and add the folder of the executable to your [system's PATH variable](https://stackoverflow.com/a/44272417) to be able to run it from anywhere in the terminal.
 
 ## Usage
-You can get a list of all available commands with the following command:
+> [!CAUTION]
+> The tool cannot be run by double-clicking the executable, since it is a command-line application and needs to be run in the terminal to work properly.
+
+You can open the CLI menu to run commands by simply running the application in the terminal without any arguments. For Windows:
 ```bash
-SteamUploader --help
+SteamUploader.exe
+```
+
+And for Linux:
+```bash
+SteamUploader
 ```
 
 You need to be in the folder of the manifest file you want to upload preferably, you can go there with the `cd` command in the terminal. For example, if your manifest file is located in `C:\MyMod\mod-manifest.json`, you can navigate to that folder with the following command:
 ```bash
 cd C:\MyMod
+```
+
+This way, the upload command will automatically find the manifest file.
+
+## Commands
+You can get a list of all available commands with the following command:
+```bash
+SteamUploader --help
 ```
 
 ### Initialization

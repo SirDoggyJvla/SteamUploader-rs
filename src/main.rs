@@ -1,21 +1,28 @@
-// use std::{path::Path, sync::mpsc::TryRecvError};
 use steamworks;
 
 mod steam;
 mod manifest;
 mod colors;
+mod enums;
+
+use enums::command_options;
 
 use clap::{Parser, Subcommand};
 use manifest::Manifest;
+use inquire::Select;
 
+
+// PARSER INFORMATION AND CLI DEFINITIONS
 #[derive(Parser)]
 #[command(name = "Steam Uploader")]
 #[command(about = "Upload mods to Steam Workshop", long_about = None)]
 struct Args {
     #[command(subcommand)]
-    command: Commands,
+    command: Option<Commands>,
 }
 
+
+// AVAILABLE COMMANDS FOR THE CLI
 #[derive(Subcommand)]
 enum Commands {
     /// Initialize a new manifest file with default values (mod-manifest.json)
@@ -53,14 +60,117 @@ enum Commands {
 }
 
 
-
+// MAIN ENTRY POINT
 fn main() {
     let args = Args::parse();
-    match args.command {
+    
+    let command = match args.command {
+        Some(cmd) => cmd,
+        None => show_interactive_menu(),
+    };
+    
+    execute_command(command);
+}
+
+
+// INTERACTIVE MENU
+// used when no command is provided via CLI arguments
+// shows a menu to select the command from
+fn show_interactive_menu() -> Commands {
+    let options = vec![
+        command_options::INIT,
+        command_options::UPLOAD,
+        command_options::DELETE,
+    ];
+
+    let selection = Select::new("What would you like to do?", options)
+        .prompt()
+        .expect("Failed to read selection");
+
+    match selection {
+        // initialize a new manifest file
+        command_options::INIT => {
+            // ask for the format of the manifest file
+            let format = inquire::Select::new(
+                "Choose manifest format:",
+                vec!["json", "toml", "yaml"],
+            )
+            .prompt()
+            .expect("Failed to read format");
+
+            // run
+            Commands::Init {
+                format: format.to_string(),
+            }
+        }
+
+
+        // upload content to steam workshop
+        command_options::UPLOAD => {
+            // ask for custom manifest file path
+            let manifest_path = inquire::Text::new("Manifest file path (leave empty for default):")
+                .prompt()
+                .ok()
+                .and_then(|p| if p.is_empty() { None } else { Some(p) });
+
+            // ask for patch note file path (optional)
+            let patchnote = inquire::Text::new("Patch note file path (optional, leave empty to skip):")
+                .prompt()
+                .ok()
+                .and_then(|p| if p.is_empty() { None } else { Some(p) });
+
+            // ask if they want to do a dry run (default: no)
+            let dry_run = inquire::Confirm::new("Perform a dry run (no actual upload)?")
+                .with_default(false)
+                .prompt()
+                .unwrap_or(false);
+
+            // run
+            Commands::Upload {
+                patchnote,
+                manifest: manifest_path,
+                dry_run,
+            }
+        }
+
+
+        // delete a workshop item
+        command_options::DELETE => {
+            // ask for the workshop ID to delete
+            let workshopid = inquire::Text::new("Workshop ID to delete:")
+                .prompt()
+                .expect("Failed to read input")
+                .parse::<u64>()
+                .expect("Invalid Workshop ID");
+
+            // ask for the app ID
+            let appid = inquire::Text::new("App ID:")
+                .prompt()
+                .expect("Failed to read input")
+                .parse::<u32>()
+                .expect("Invalid App ID");
+
+            // run
+            Commands::Delete { workshopid, appid }
+        }
+
+        // this should never happen since we control the options, but just in case
+        _ => unreachable!(),
+    }
+}
+
+
+
+// HANDLING OF THE SELECTED COMMAND
+fn execute_command(command: Commands) {
+    match command {
+        // initialize a new manifest file with default values
         Commands::Init { format } => {
             Manifest::init(&format);
         }
 
+
+        // handle the upload command
         Commands::Upload { patchnote, manifest: manifest_path, dry_run } => {
             match Manifest::load_default(manifest_path) {
                 Ok(mut manifest) => {
@@ -149,7 +259,7 @@ fn main() {
         }
 
 
-        // Here we delete the workshop item provided by the user. Steam's API handles basically everything else,
+        // here we delete the workshop item provided by the user. Steam's API handles basically everything else,
         // we don't need to verify if it exists or if the user is the owner, etc.
         Commands::Delete { workshopid, appid } => {
             let (_, ugc) = steam::load::load_steam(appid);
