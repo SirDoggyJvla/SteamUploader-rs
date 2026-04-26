@@ -113,6 +113,21 @@ cargo build --release
 
 The built binary can be found in the `target/release` folder.
 
-## Contact
+## Contact and license
 The tool was created by me (discord: SimKDT) for the Project Zomboid modding community.
 You can find us on the [Unofficial Modding Discord](https://pzwiki.net/wiki/PZ_Modding_Community) of Project Zomboid.
+
+You can find the license in the [LICENSE](LICENSE) file.
+
+## Changelogs
+0.2.0
+- added a CLI menu to run commands easily
+
+0.1.2
+- added $schema as a parameter of the default mod-manifest file
+
+0.1.1
+- added a check to not overwrite the mod-manifest file with the init command if it already exists
+
+0.1.0
+- Initial release
