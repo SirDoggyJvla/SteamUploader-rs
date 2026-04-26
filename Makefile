@@ -30,16 +30,24 @@ else
 	APP_RELATIVE := SteamUploader
 endif
 
+# Extract version from Cargo.toml
+CARGO_VERSION := $(shell grep '^version' Cargo.toml | head -1 | sed -E 's/version\s*=\s*"(.*)".*/\1/')
+
 help:
 	@echo "Usage: make [target]"
 	@echo "Available targets:"
-	@echo "  tests    - Run tests"
-	@echo "  test_upload - Test the upload functionality"
+	@echo "  release        - Create a new release (requires VERSION variable, e.g. make release VERSION=v1.0.0)"
+	@echo "  tests          - Run tests"
+	@echo "  test_upload    - Test the upload functionality"
 	@echo "  test_manifests - Test manifest parsing with different formats (json, toml, yaml, yml)"
 
 release:
 	@if [ -z "$(VERSION)" ]; then \
 		echo "ERROR: VERSION is not set. Usage: make release VERSION=v1.0.0"; \
+		exit 1; \
+	fi
+	@if [ "$(VERSION)" != "$(CARGO_VERSION)" ]; then \
+		echo "ERROR: VERSION ($(VERSION)) does not match Cargo.toml version ($(CARGO_VERSION))"; \
 		exit 1; \
 	fi
 	@echo "Releasing version $(VERSION)"
