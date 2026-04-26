@@ -1,15 +1,24 @@
-use steamworks;
-
+// utilities
 mod steam;
-mod manifest;
 mod colors;
+
+// enums
 mod enums;
+use enums::{command_options, manifests_options}; // CLI main menu options
 
-use enums::command_options;
-
-use clap::{Parser, Subcommand};
+// manifest handling
+mod manifest;
 use manifest::Manifest;
-use inquire::Select;
+
+// LIBRARIES
+use clap::{Parser, Subcommand}; // CLI argument parsing
+use inquire; // for interactive CLI menu
+use steamworks; // rust bindings for the Steamworks API
+use serde::{Deserialize, Serialize}; // for config and manifest serialization
+use confy; // for configuration management
+
+
+
 
 
 // PARSER INFORMATION AND CLI DEFINITIONS
@@ -19,6 +28,19 @@ use inquire::Select;
 struct Args {
     #[command(subcommand)]
     command: Option<Commands>,
+}
+
+
+// CONFIG STRUCTURE
+#[derive(Debug, Serialize, Deserialize, Clone)]
+struct ManifestConfigEntry {
+    name: String,
+    path: String,
+}
+
+#[derive(Default, Serialize, Deserialize)]
+struct SteamUploaderConfig {
+    manifests: Vec<ManifestConfigEntry>,
 }
 
 
@@ -57,6 +79,10 @@ enum Commands {
         #[arg(short, long)]
         appid: u32,
     },
+
+    /// Manage manifest configurations
+    #[command(name = "manage-config")]
+    ManageConfig {},
 }
 
 
@@ -64,11 +90,17 @@ enum Commands {
 fn main() {
     let args = Args::parse();
     
-    let command = match args.command {
-        Some(cmd) => cmd,
-        None => show_interactive_menu(),
-    };
-    
+    // no command provided, show interactive menu
+    if args.command.is_none() {
+        // never end the menu loop, unless EXIT is selected which calls exit(0)
+        loop {
+            let command = show_interactive_menu(); // get command
+            execute_command(command); // run
+        }
+    }
+
+    // run command by CLI argument
+    let command = args.command.unwrap();
     execute_command(command);
 }
 
@@ -78,12 +110,14 @@ fn main() {
 // shows a menu to select the command from
 fn show_interactive_menu() -> Commands {
     let options = vec![
+        command_options::MANAGE_CONFIG, // first for quick access
         command_options::INIT,
         command_options::UPLOAD,
         command_options::DELETE,
+        command_options::EXIT,
     ];
 
-    let selection = Select::new("What would you like to do?", options)
+    let selection = inquire::Select::new("What would you like to do?", options.clone())
         .prompt()
         .expect("Failed to read selection");
 
@@ -99,9 +133,9 @@ fn show_interactive_menu() -> Commands {
             .expect("Failed to read format");
 
             // run
-            Commands::Init {
+            return Commands::Init {
                 format: format.to_string(),
-            }
+            };
         }
 
 
@@ -126,11 +160,11 @@ fn show_interactive_menu() -> Commands {
                 .unwrap_or(false);
 
             // run
-            Commands::Upload {
+            return Commands::Upload {
                 patchnote,
                 manifest: manifest_path,
                 dry_run,
-            }
+            };
         }
 
 
@@ -151,7 +185,17 @@ fn show_interactive_menu() -> Commands {
                 .expect("Invalid App ID");
 
             // run
-            Commands::Delete { workshopid, appid }
+            return Commands::Delete { workshopid, appid };
+        }
+
+        // manage manifest configurations
+        command_options::MANAGE_CONFIG => {
+            return Commands::ManageConfig {};
+        }
+
+        // exit the program
+        command_options::EXIT => {
+            std::process::exit(0);
         }
 
         // this should never happen since we control the options, but just in case
@@ -266,5 +310,103 @@ fn execute_command(command: Commands) {
             let published_id = steamworks::PublishedFileId(workshopid);
             steam::delete::delete_item(&ugc, published_id);
         }
+
+        // manage manifest configurations
+        Commands::ManageConfig {} => {
+            if let Err(e) = manage_config() {
+                colors::error(&format!("Configuration error: {}", e));
+            }
+        }
     }
 }
+
+
+
+
+// MANAGE CONFIGURATION
+// allows users to create, view, add, and remove manifest configurations
+fn manage_config() -> Result<(), Box<dyn std::error::Error>> {
+    loop {
+        // load config (creates empty if doesn't exist)
+        let mut config: SteamUploaderConfig = confy::load("steam-uploader", None)?;
+
+        // access available manifests
+        let manifests = config.manifests.clone();
+        let mut manifest_indices = vec![];
+
+        // populate options with existing manifests for quick access
+        let mut options = vec![];
+        for (i, manifest) in manifests.iter().enumerate() {
+            let option = format!("{} - {} ({})", i, manifest.name, manifest.path);
+            options.push(option.clone());
+            manifest_indices.push(i);
+        }
+
+        // add options to add and remove manifests at the end of the list
+        options.push(manifests_options::ADD_MANIFEST.to_string());
+        options.push(manifests_options::REMOVE_MANIFEST.to_string());
+        options.push(manifests_options::BACK.to_string());
+
+        let selection = inquire::Select::new(
+            "Select a manifest to upload?",
+            options.clone())
+            .prompt()?;
+
+        
+
+        match selection.as_str() {
+            manifests_options::ADD_MANIFEST => {
+                let name = inquire::Text::new("Manifest name (e.g., 'Main Mod'):")
+                    .prompt()?;
+
+                let path = inquire::Text::new("Manifest file path:")
+                    .prompt()?;
+
+                // Add to vector
+                config.manifests.push(ManifestConfigEntry { name: name.clone(), path });
+                colors::success(&format!("Added '{}' to configuration", name));
+
+                // Save immediately
+                confy::store("steam-uploader", None, &config)?;
+                colors::success("Configuration saved");
+            }
+
+            manifests_options::REMOVE_MANIFEST => {
+                if config.manifests.is_empty() {
+                    colors::warning("No manifests in config to remove.");
+                    continue;
+                }
+
+                let names: Vec<String> = config.manifests.iter().map(|m| m.name.clone()).collect();
+                let selection = inquire::Select::new("Select manifest to remove:", names)
+                    .prompt()?;
+
+                if let Some(index) = config.manifests.iter().position(|m| m.name == selection) {
+                    config.manifests.remove(index);
+                    colors::success("Manifest removed from configuration.");
+                    
+                    // save immediately
+                    confy::store("steam-uploader", None, &config)?;
+                    colors::success("Configuration saved");
+                }
+            }
+
+            manifests_options::BACK => {
+                return Ok(());
+            }
+
+            _ => {
+                // Find which manifest was selected
+                if let Some(pos) = options.iter().position(|o| o == &selection) {
+                    if pos < manifest_indices.len() {
+                        let index = manifest_indices[pos];
+                        let selected = &manifests[index];
+                        colors::info(&format!("Selected manifest: {} ({})", selected.name, selected.path));
+                    }
+                }
+            }
+        }
+    }
+}
+
+
