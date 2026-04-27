@@ -15,6 +15,12 @@
       "description": "JSON Schema URI that validates this manifest file",
       "examples": ["https://raw.githubusercontent.com/SirDoggyJvla/SteamUploader-rs/refs/heads/main/manifest_schema/mod-manifest-schema.json"]
     },
+    "workshopid": {
+      "type": "integer",
+      "description": "Steam Workshop ID for the mod (if updating an existing item). If not provided, a new item will be created and that field will be added to the mod manifest automatically upon creation.",
+      "minimum": 1,
+      "examples": [123456789]
+    },
     "appid": {
       "type": "integer",
       "description": "Steam application ID for the game",
