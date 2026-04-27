@@ -5,7 +5,11 @@ mod interact;
 
 // enums
 mod enums;
-use enums::{Commands}; // CLI main menu options
+use enums::{
+    Commands,
+    ManifestConfigEntry,
+    SteamUploaderConfig,
+}; // CLI main menu options
 
 // manifest handling
 mod manifest;
@@ -36,7 +40,7 @@ fn main() {
     if args.command.is_none() {
         // never end the menu loop, unless EXIT is selected which calls exit(0)
         loop {
-            let command = interact::show_interactive_menu(); // get command
+            let command = interact::display_main_menu(); // get command
             execute_command(command); // run
         }
     }
@@ -60,7 +64,7 @@ fn execute_command(command: Commands) {
 
 
         // handle the upload command
-        Commands::Upload { patchnote, manifest: manifest_path, dry_run } => {
+        Commands::Upload { patchnote, manifest_path, dry_run } => {
             match Manifest::load_default(manifest_path) {
                 Ok(mut manifest) => {
                     let appid = manifest.appid;
@@ -156,10 +160,41 @@ fn execute_command(command: Commands) {
             steam::delete::delete_item(&ugc, published_id);
         }
 
-        // manage manifest configurations
-        Commands::ManageConfig {} => {
-            if let Err(e) = interact::manage_config() {
-                colors::error(&format!("Configuration error: {}", e));
+        // add manifest configuration
+        Commands::AddManifest { name, path } => {
+            // load config (creates empty if doesn't exist)
+            let mut config: SteamUploaderConfig = confy::load("steam-uploader", None)
+                .expect("Failed to load configuration");
+
+            // Add to vector
+            config.manifests.push(ManifestConfigEntry { name: name.clone(), path });
+            colors::success(&format!("Added '{}' to configuration", name));
+
+            // Save immediately
+            confy::store("steam-uploader", None, &config)
+                .expect("Failed to save configuration");
+            colors::success("Configuration saved");
+        }
+
+        // remove manifest configuration
+        Commands::RemoveManifest { name } => {
+            // load config (creates empty if doesn't exist)
+            let mut config: SteamUploaderConfig = confy::load("steam-uploader", None)
+                .expect("Failed to load configuration");
+
+            if config.manifests.is_empty() {
+                colors::warning("No manifests in config to remove.");
+                return;
+            }
+
+            if let Some(index) = config.manifests.iter().position(|m| m.name == name) {
+                config.manifests.remove(index);
+                colors::success("Manifest removed from configuration.");
+                
+                // save immediately
+                confy::store("steam-uploader", None, &config)
+                    .expect("Failed to save configuration");
+                colors::success("Configuration saved");
             }
         }
     }

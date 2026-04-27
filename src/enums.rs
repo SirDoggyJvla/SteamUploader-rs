@@ -1,5 +1,6 @@
 
 // LIBRARIES
+use serde::{Deserialize, Serialize}; // for config and manifest serialization
 use clap::{Subcommand}; // CLI argument parsing
 
 
@@ -38,7 +39,7 @@ pub enum Commands {
 
         /// Optional path to manifest file
         #[arg(short, long)]
-        manifest: Option<String>,
+        manifest_path: Option<String>,
 
         /// Optional flag to make a dry run (no actual upload, just print what would be uploaded)
         #[arg(short, long)]
@@ -56,7 +57,33 @@ pub enum Commands {
         appid: u32,
     },
 
-    /// Manage manifest configurations
-    #[command(name = "manage-config")]
-    ManageConfig {},
+    /// Add manifest configuration
+    AddManifest {
+        /// Name for the manifest configuration (e.g. "My Mod")
+        #[arg(short, long)]
+        name: String,
+
+        /// Path to the manifest file
+        #[arg(short, long)]
+        path: String,
+    },
+
+    RemoveManifest {
+        /// Name of the manifest configuration to remove
+        #[arg(short, long)]
+        name: String,
+    },
+}
+
+
+// CONFIG STRUCTURE
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct ManifestConfigEntry {
+    pub name: String,
+    pub path: String,
+}
+
+#[derive(Default, Serialize, Deserialize)]
+pub struct SteamUploaderConfig {
+    pub manifests: Vec<ManifestConfigEntry>,
 }

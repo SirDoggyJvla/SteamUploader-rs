@@ -6,28 +6,15 @@ use crate::enums;
 use enums::{ // CLI main menu options
     command_options, 
     manifests_options, 
-    Commands
+    Commands,
+    SteamUploaderConfig,
 };
 
 // LIBRARIES
-use serde::{Deserialize, Serialize}; // for config and manifest serialization
 use confy; // for configuration management
 use inquire; // for interactive CLI menu
 
 
-
-
-// CONFIG STRUCTURE
-#[derive(Debug, Serialize, Deserialize, Clone)]
-struct ManifestConfigEntry {
-    name: String,
-    path: String,
-}
-
-#[derive(Default, Serialize, Deserialize)]
-struct SteamUploaderConfig {
-    manifests: Vec<ManifestConfigEntry>,
-}
 
 
 
@@ -36,7 +23,7 @@ struct SteamUploaderConfig {
 // INTERACTIVE MENU
 // used when no command is provided via CLI arguments
 // shows a menu to select the command from
-pub fn show_interactive_menu() -> Commands {
+pub fn display_main_menu() -> Commands {
     let options = vec![
         command_options::MANAGE_CONFIG, // first for quick access
         command_options::INIT,
@@ -69,30 +56,7 @@ pub fn show_interactive_menu() -> Commands {
 
         // upload content to steam workshop
         command_options::UPLOAD => {
-            // ask for custom manifest file path
-            let manifest_path = inquire::Text::new("Manifest file path (leave empty for default):")
-                .prompt()
-                .ok()
-                .and_then(|p| if p.is_empty() { None } else { Some(p) });
-
-            // ask for patch note file path (optional)
-            let patchnote = inquire::Text::new("Patch note file path (optional, leave empty to skip):")
-                .prompt()
-                .ok()
-                .and_then(|p| if p.is_empty() { None } else { Some(p) });
-
-            // ask if they want to do a dry run (default: no)
-            let dry_run = inquire::Confirm::new("Perform a dry run (no actual upload)?")
-                .with_default(false)
-                .prompt()
-                .unwrap_or(false);
-
-            // run
-            return Commands::Upload {
-                patchnote,
-                manifest: manifest_path,
-                dry_run,
-            };
+            return display_upload_menu( None );
         }
 
 
@@ -118,7 +82,7 @@ pub fn show_interactive_menu() -> Commands {
 
         // manage manifest configurations
         command_options::MANAGE_CONFIG => {
-            return Commands::ManageConfig {};
+            return display_manifests_menu();
         }
 
         // exit the program
@@ -133,16 +97,43 @@ pub fn show_interactive_menu() -> Commands {
 
 
 
+fn display_upload_menu( mut manifest_path: Option<String> ) -> Commands {
+    if manifest_path.is_none() {
+        // ask for custom manifest file path
+        manifest_path = inquire::Text::new("Manifest file path (leave empty for default):")
+            .prompt()
+            .ok()
+            .and_then(|p| if p.is_empty() { None } else { Some(p) });
+    }
 
+    // ask for patch note file path (optional)
+    let patchnote = inquire::Text::new("Patch note file path (optional, leave empty to skip):")
+        .prompt()
+        .ok()
+        .and_then(|p| if p.is_empty() { None } else { Some(p) });
+
+    // ask if they want to do a dry run (default: no)
+    let dry_run = inquire::Confirm::new("Perform a dry run (no actual upload)?")
+        .with_default(false)
+        .prompt()
+        .unwrap_or(false);
+
+    return Commands::Upload {
+        patchnote,
+        manifest_path,
+        dry_run,
+    };
+}
 
 
 
 // MANAGE CONFIGURATION
 // allows users to create, view, add, and remove manifest configurations
-pub fn manage_config() -> Result<(), Box<dyn std::error::Error>> {
+pub fn display_manifests_menu() -> Commands {
     loop {
         // load config (creates empty if doesn't exist)
-        let mut config: SteamUploaderConfig = confy::load("steam-uploader", None)?;
+        let config: SteamUploaderConfig = confy::load("steam-uploader", None)
+            .expect("Failed to load configuration");
 
         // access available manifests
         let manifests = config.manifests.clone();
@@ -162,27 +153,24 @@ pub fn manage_config() -> Result<(), Box<dyn std::error::Error>> {
         options.push(manifests_options::BACK.to_string());
 
         let selection = inquire::Select::new(
-            "Select a manifest to upload?",
+            "Select a manifest to upload",
             options.clone())
-            .prompt()?;
+            .prompt()
+            .expect("Failed to read selection");
 
         
 
         match selection.as_str() {
             manifests_options::ADD_MANIFEST => {
                 let name = inquire::Text::new("Manifest name (e.g., 'Main Mod'):")
-                    .prompt()?;
+                    .prompt()
+                    .expect("Failed to read manifest name");
 
                 let path = inquire::Text::new("Manifest file path:")
-                    .prompt()?;
+                    .prompt()
+                    .expect("Failed to read manifest file path");
 
-                // Add to vector
-                config.manifests.push(ManifestConfigEntry { name: name.clone(), path });
-                colors::success(&format!("Added '{}' to configuration", name));
-
-                // Save immediately
-                confy::store("steam-uploader", None, &config)?;
-                colors::success("Configuration saved");
+                return Commands::AddManifest { name, path };
             }
 
             manifests_options::REMOVE_MANIFEST => {
@@ -192,22 +180,16 @@ pub fn manage_config() -> Result<(), Box<dyn std::error::Error>> {
                 }
 
                 let names: Vec<String> = config.manifests.iter().map(|m| m.name.clone()).collect();
-                let selection = inquire::Select::new("Select manifest to remove:", names)
-                    .prompt()?;
+                let name = inquire::Select::new("Select manifest to remove:", names)
+                    .prompt()
+                    .expect("Failed to read selection");
 
-                if let Some(index) = config.manifests.iter().position(|m| m.name == selection) {
-                    config.manifests.remove(index);
-                    colors::success("Manifest removed from configuration.");
-                    
-                    // save immediately
-                    confy::store("steam-uploader", None, &config)?;
-                    colors::success("Configuration saved");
-                }
+                return Commands::RemoveManifest { name };
             }
 
-            manifests_options::BACK => {
-                return Ok(());
-            }
+            // manifests_options::BACK => {
+            //     return Ok(());
+            // }
 
             _ => {
                 // Find which manifest was selected
@@ -216,6 +198,9 @@ pub fn manage_config() -> Result<(), Box<dyn std::error::Error>> {
                         let index = manifest_indices[pos];
                         let selected = &manifests[index];
                         colors::info(&format!("Selected manifest: {} ({})", selected.name, selected.path));
+
+                        let manifest_path = Some(selected.path.clone());
+                        return display_upload_menu(manifest_path);
                     }
                 }
             }
